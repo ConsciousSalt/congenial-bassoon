@@ -1,0 +1,22 @@
+{
+  "name": "NodeJS-complete-guide",
+  "version": "1.0.0",
+  "main": "app.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon app.js"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.3"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "ejs": "^3.1.2",
+    "express": "^4.17.1",
+    "express-handlebars": "3.0",
+    "mssql2": "^3.3.1",
+    "mysql2": "^2.1.0",
+    "pug": "^2.0.4",
+    "sequelize": "^6.3.3"
+  }
+}
