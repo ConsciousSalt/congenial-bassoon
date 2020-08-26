@@ -1,9 +1,26 @@
-const Sequelize = require('sequelize');
+const mongodb = require('mongodb');
+const MongoClient = mongodb.MongoClient;
 
-const sequelize = new Sequelize('node-shop', 
-                                    'root', 
-                                    'hb4gj1zYJf1uFP6yH', 
-                                        {dialect: 'mysql', 
-                                        host: 'localhost'}
-                                );
-module.exports = sequelize;
+let _db;
+
+const mongoConnect = (callback) => {
+    MongoClient.connect('mongodb+srv://Alex:dylvwUvtBXOuxtz1@clustera.hvojq.mongodb.net/shop?retryWrites=true&w=majority')
+    .then(client => {
+        console.log('Connected!');
+        _db = client.db();
+        callback();
+    })
+    .catch(err=>{
+        console.log(err);
+        throw err;
+    });
+};
+
+const getDb = () => {
+    if (_db) {
+        return _db;
+    }
+};
+
+exports.mongoConnect    = mongoConnect; 
+exports.getDb           = getDb;
