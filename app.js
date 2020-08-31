@@ -1,39 +1,62 @@
-const path          = require('path');
+const path = require("path");
 
-const express       = require('express');
-const bodyParser    = require('body-parser');
-   
-const app           = express();
+const express = require("express");
+const bodyParser = require("body-parser");
 
-const mongoConnect  = require('./utils/database').mongoConnect;
-const User          = require('./models/user');
-app.set('view engine', 'ejs');
-app.set('views', 'views');
+const mongoose = require("mongoose");
+
+const app = express();
+
+const User = require("./models/user");
+app.set("view engine", "ejs");
+app.set("views", "views");
 
 //Routes
-const adminRoutes   = require('./routes/admin');
-const shopRoutes    = require('./routes/shop');
-const errorsController = require('./controllers/errors');
+const adminRoutes = require("./routes/admin");
+const shopRoutes = require("./routes/shop");
+const authRoutes  = require("./routes/auth");
 
-app.use(bodyParser.urlencoded({extended:false}));
-app.use(express.static(path.join(__dirname, 'public')));
+const errorsController = require("./controllers/errors");
 
-app.use((req, res, next)=>{
-    User.findUserById("5f4642ab6e96b8b03e167bbd")
-    .then(user => {
-        req.user = user;
-        next();
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, "public")));
+
+app.use((req, res, next) => {
+  User.findById("5f49065946c65b3450592429")
+    .then((user) => {
+      req.user = user;
+      next();
     })
-    .catch(err=>{
-        console.log(err);
-    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
- app.use('/admin', adminRoutes);
- app.use(shopRoutes);
+app.use("/admin", adminRoutes);
+app.use(shopRoutes);
 
- app.use(errorsController.getPageNotFound);
+app.use(errorsController.getPageNotFound);
 
-mongoConnect(()=> {
+const uris =
+  "mongodb+srv://Alex:dylvwUvtBXOuxtz1@clustera.hvojq.mongodb.net/shop?retryWrites=true&w=majority";
+mongoose
+  .connect(uris)
+  .then((result) => {
+    User.findOne().then((user) => {
+      if (!user) {
+        const user = new User({
+          name: "Mileena",
+          email: "killKitana@gmail.com",
+          cart: {
+            items: [],
+          },
+        });
+        user.save();
+      }
+    });
+
     app.listen(3000);
-});
+  })
+  .catch((err) => {
+    console.log(err);
+  });
