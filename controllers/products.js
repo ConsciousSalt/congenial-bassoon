@@ -10,6 +10,7 @@ exports.getAddProducts = (req, res, next) => {
     formsCSS: true,
     productCSS: true,
     activeAddProduct: true,
+    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -28,6 +29,7 @@ exports.getEditProduct = (req, res, next) => {
         productCSS: true,
         activeAddProduct: true,
         product: product,
+        isAuthenticated: req.session.isLoggedIn
       });
     })
     .catch((err) => console.log(err));
@@ -36,8 +38,6 @@ exports.getEditProduct = (req, res, next) => {
 exports.getProducts = (req, res, next) => {
   Product.find()
     .then((products) => {
-      console.log(products);
-
       res.render("admin/products", {
         products,
         pageTitle: "Admin products",
@@ -46,6 +46,7 @@ exports.getProducts = (req, res, next) => {
         activeShop: true,
         formsCSS: true,
         productCSS: true,
+        isAuthenticated: req.session.isLoggedIn
       });
     })
     .catch((err) => console.log(err));
@@ -107,6 +108,7 @@ exports.getMainPage = (req, res) => {
       activeShop: true,
       formsCSS: true,
       productCSS: true,
+      isAuthenticated: req.session.isLoggedIn
     });
   });
 };
@@ -124,6 +126,7 @@ exports.getCart = (req, res) => {
         pageTitle: "Your cart",
         path: "/cart",
         products: products,
+        isAuthenticated: req.session.isLoggedIn
       });
     })
     .catch((err) => {
@@ -161,7 +164,8 @@ exports.getOrders = (req, res)=>{
         res.render('shop/orders', {
             pageTitle: "Orders",
             path: '/orders',
-            orders: orders
+            orders: orders,
+            isAuthenticated: req.session.isLoggedIn
         });
     })
     .catch(err=>{console.log(err)})
@@ -169,8 +173,6 @@ exports.getOrders = (req, res)=>{
 
 exports.getProductList = (req, res) => {
   Product.find().then((products) => {
-    console.log(products);
-
     res.render("shop/product-list", {
       products,
       pageTitle: "Products",
@@ -179,6 +181,7 @@ exports.getProductList = (req, res) => {
       activeShop: true,
       formsCSS: true,
       productCSS: true,
+      isAuthenticated: req.session.isLoggedIn
     });
   });
 };
@@ -195,6 +198,7 @@ exports.getProduct = (req, res, next) => {
         pageTitle: "Product detail",
         path: "/products",
         product: product,
+        isAuthenticated: req.session.isLoggedIn
       });
     })
     .catch((err) => console.log(err));
