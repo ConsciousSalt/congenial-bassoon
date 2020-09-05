@@ -9,14 +9,19 @@
     <main>
         <form class="login-form" action="/signup" method="POST">
             <div class="form-control">
-                <label for="email">Title</label>
+                <label for="email">E-mail</label>
                 <input type="email" name="email" id="email">
             </div>
             <div class="form-control">
-                <label for="imageURL">Password</label>
+                <label for="password">Password</label>
                 <input type="password" name="password" id="password">
             </div>
+            <div class="form-control">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" name="confirmPassword" id="confirmPassword">
+            </div>
             <button class="btn" type="submit">Signup</button>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         </form>
     </main>
 <%- include('../includes/end.ejs') %>

@@ -7,9 +7,9 @@ const orderSchema = new Schema({
         quantity: {type: Schema.Types.Number, required: true}
     }],
     user: {
-        name: {
+        email: {
             type: Schema.Types.String,
-            required: true
+            required: true             
         },
         userId: {
             type: Schema.Types.ObjectId,
