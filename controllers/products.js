@@ -9,8 +9,7 @@ exports.getAddProducts = (req, res, next) => {
     path: "/admin/add-product",
     formsCSS: true,
     productCSS: true,
-    activeAddProduct: true,
-    isAuthenticated: req.session.isLoggedIn
+    activeAddProduct: true
   });
 };
 
@@ -28,8 +27,7 @@ exports.getEditProduct = (req, res, next) => {
         formsCSS: true,
         productCSS: true,
         activeAddProduct: true,
-        product: product,
-        isAuthenticated: req.session.isLoggedIn
+        product: product
       });
     })
     .catch((err) => console.log(err));
@@ -45,8 +43,7 @@ exports.getProducts = (req, res, next) => {
         hasProducts: products.length > 0,
         activeShop: true,
         formsCSS: true,
-        productCSS: true,
-        isAuthenticated: req.session.isLoggedIn
+        productCSS: true
       });
     })
     .catch((err) => console.log(err));
@@ -124,8 +121,7 @@ exports.getCart = (req, res) => {
       res.render("shop/cart", {
         pageTitle: "Your cart",
         path: "/cart",
-        products: products,
-        isAuthenticated: req.session.isLoggedIn
+        products: products
       });
     })
     .catch((err) => {
@@ -163,8 +159,7 @@ exports.getOrders = (req, res)=>{
         res.render('shop/orders', {
             pageTitle: "Orders",
             path: '/orders',
-            orders: orders,
-            isAuthenticated: req.session.isLoggedIn
+            orders: orders
         });
     })
     .catch(err=>{console.log(err)})
@@ -179,8 +174,7 @@ exports.getProductList = (req, res) => {
       hasProducts: products.length > 0,
       activeShop: true,
       formsCSS: true,
-      productCSS: true,
-      isAuthenticated: req.session.isLoggedIn
+      productCSS: true
     });
   });
 };
@@ -196,8 +190,7 @@ exports.getProduct = (req, res, next) => {
       res.render("shop/product-detail", {
         pageTitle: "Product detail",
         path: "/products",
-        product: product,
-        isAuthenticated: req.session.isLoggedIn
+        product: product
       });
     })
     .catch((err) => console.log(err));
