@@ -1,5 +1,4 @@
-const MONGO_URI =
-  "mongodb+srv://Alex:dylvwUvtBXOuxtz1@clustera.hvojq.mongodb.net/shop?retryWrites=true&w=majority";
+const MONGO_URI = require('./data/mongodb');
 
 const path = require("path");
 
@@ -7,6 +6,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 const mongoose = require("mongoose");
+mongoose.set('useUnifiedTopology', true);
+mongoose.set('useNewUrlParser', true);
 
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
@@ -76,7 +77,7 @@ app.use(errorsController.getPageNotFound);
 
 mongoose
   .connect(MONGO_URI)
-  .then((result) => {
+  .then((result) => {    
     app.listen(3000);
   })
   .catch((err) => {
