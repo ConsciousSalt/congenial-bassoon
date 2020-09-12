@@ -1,5 +1,6 @@
 const verifiedMail = require("../data/sendgrid-verified-mail");
 
+const { validationResult } = require("express-validator");
 const crypto = require("crypto");
 
 const bcrypt = require("bcryptjs");
@@ -87,7 +88,17 @@ exports.postLogin = (req, res, next) => {
 exports.postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  const confirmPassword = req.body.confirmPassword;
+  const errors = validationResult(req);
+
+  console.log(errors.array());
+
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/signup", {
+      pageTitle: "Signupn",
+      path: "/signup",
+      errorMessage: errors.array()[0].msg,
+    });
+  }
 
   User.findOne({ email: email })
     .then((userDoc) => {
@@ -216,16 +227,16 @@ exports.postNewPassword = (req, res, next) => {
   })
     .then((user) => {
       resetUser = user;
-      return bcrypt.hash(newPassword, 12)    
+      return bcrypt.hash(newPassword, 12);
     })
-    .then(hashedPassword =>{
-      resetUser.password              = hashedPassword;
-      resetUser.resetToken            = undefined;
-      resetUser.resetTokenExpiration  = undefined;
+    .then((hashedPassword) => {
+      resetUser.password = hashedPassword;
+      resetUser.resetToken = undefined;
+      resetUser.resetTokenExpiration = undefined;
       return resetUser.save();
     })
-    .then(result => {
-      res.redirect('/login');
+    .then((result) => {
+      res.redirect("/login");
     })
     .catch((err) => {
       console.log(err);
