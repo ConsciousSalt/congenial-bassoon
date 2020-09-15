@@ -7,22 +7,41 @@
    <%- include('../includes/navigation.ejs') %>
 
     <main>
+        <% if (errorMessage) { %>
+            <div class='user-message user-message--error'><%= errorMessage %></div>
+        <% } %>
         <form class="product-form" action="/admin/add-product" method="POST">
             <div class="form-control">
                 <label for="title">Title</label>
-                <input type="text" name="title" id="title">
+                <input
+                    class = "<%= validationErrors.find(e=> e.param === 'title') ? 'invalid' : '' %>" 
+                    type="text" 
+                    name="title" 
+                    id="title" 
+                    value="<%=userInput.title%>">
             </div>
             <div class="form-control">
                 <label for="imageURL">Image URL</label>
-                <input type="text" name="imageURL" id="imageURL">
+                <input
+                    class = "<%= validationErrors.find(e=> e.param === 'imageURL') ? 'invalid' : '' %>"  
+                    type="text" 
+                    name="imageURL" 
+                    id="imageURL" 
+                    value="<%=userInput.imageURL%>">
             </div>
             <div class="form-control">
                 <label for="price">Price</label>
-                <input type="number" name="price" id="price" step="0.01">
+                <input 
+                    class = "<%= validationErrors.find(e=> e.param === 'price') ? 'invalid' : '' %>"                  
+                    type="number" 
+                    name="price"
+                    id="price" 
+                    step="0.01" 
+                    value="<%=userInput.price%>">
             </div>
             <div class="form-control">
                 <label for="description">Description</label>
-                <textarea name="description" id="description" rows="5"></textarea>
+                <textarea name="description" id="description" rows="5"><%=userInput.description%></textarea>
             </div>
 
             <button class="btn" type="submit">Add Product</button>

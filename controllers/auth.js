@@ -30,12 +30,15 @@ exports.getLogin = (req, res, next) => {
     pageTitle: "Login",
     path: "/login",
     errorMessage: flashMessage,
+    userInput:{
+      email: '',
+      password: ''
+    },
+    validationErrors: []
   });
 };
 
 exports.getSignup = (req, res, next) => {
-  console.log(SENDGRID_API_KEY);
-
   let flashMessage = req.flash("error");
   if (flashMessage.length > 0) {
     flashMessage = flashMessage[0];
@@ -47,88 +50,81 @@ exports.getSignup = (req, res, next) => {
     pageTitle: "Signupn",
     path: "/signup",
     errorMessage: flashMessage,
+    userInput: {
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    validationErrors: []
   });
 };
 
 exports.postLogin = (req, res, next) => {
-  const email = req.body.email;
-  const password = req.body.password;
+  const errors = validationResult(req);
 
-  User.findOne({ email: email })
-    .then((user) => {
-      if (!user) {
-        req.flash("error", "Ivalid email or password");
-        return res.redirect("/login");
-      }
-
-      bcrypt
-        .compare(password, user.password)
-        .then((match) => {
-          if (match) {
-            req.session.isLoggedIn = true;
-            req.session.user = user;
-            return req.session.save((err) => {
-              console.log(err);
-              res.redirect("/");
-            });
-          }
-
-          req.flash("error", "Ivalid email or password");
-          res.redirect("/login");
-        })
-        .catch((err) => {
-          return res.redirect("/login");
-        });
-    })
-    .catch((err) => {
-      console.log(err);
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/login", {
+      pageTitle: "Login",
+      path: "/login",
+      errorMessage: errors.array()[0].msg,
+      userInput: {
+        email: req.body.email,
+        password: req.body.password
+      },
+      validationErrors: errors.array()
     });
+  };
+  return User.findOne({ email: req.body.email })
+  .then(user => {
+    req.session.isLoggedIn = true;
+    req.session.user = user;
+    return req.session.save((err) => {
+      console.log(err);
+      res.redirect("/");
+    });
+  })
+  .catch(err=>{
+    console.log(err)
+;  })
+
 };
 
 exports.postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
   const errors = validationResult(req);
-
-  console.log(errors.array());
-
   if (!errors.isEmpty()) {
     return res.status(422).render("auth/signup", {
-      pageTitle: "Signupn",
+      pageTitle: "Signup",
       path: "/signup",
       errorMessage: errors.array()[0].msg,
+      userInput: {
+        email: email,
+        password: password,
+        confirmPassword: req.body.confirmPassword,
+      },
+      validationErrors: errors.array() 
     });
   }
 
-  User.findOne({ email: email })
-    .then((userDoc) => {
-      if (userDoc) {
-        req.flash("error", "Email exists already");
-        return res.redirect("/signup");
-      }
-
-      bcrypt
-        .hash(password, 12)
-        .then((hashedPassword) => {
-          const user = new User({
-            email: email,
-            password: hashedPassword,
-            cart: { items: [] },
-          });
-          return user.save();
-        })
-        .then((result) => {
-          res.redirect("/login");
-          return transporter.sendMail({
-            to: email,
-            from: verifiedMail,
-            subject: "Submit succeded",
-            html: "<h1>You succesfully signed Up!</h1>",
-          });
-        });
+  bcrypt
+    .hash(password, 12)
+    .then((hashedPassword) => {
+      const user = new User({
+        email: email,
+        password: hashedPassword,
+        cart: { items: [] },
+      });
+      return user.save();
     })
-    .catch((err) => {
-      console.log(err);
+    .then((result) => {
+      res.redirect("/login");
+      return transporter.sendMail({
+        to: email,
+        from: verifiedMail,
+        subject: "Submit succeded",
+        html: "<h1>You succesfully signed Up!</h1>",
+      });
     });
 };
 

@@ -1,15 +1,26 @@
+const { validationResult } = require("express-validator");
+
 const Product = require("../models/product");
 const Order = require("../models/order");
 
 const { response } = require("express");
 
 exports.getAddProducts = (req, res, next) => {
+
   res.render("admin/add-product", {
     pageTitle: "Add product",
     path: "/admin/add-product",
     formsCSS: true,
     productCSS: true,
     activeAddProduct: true,
+    errorMessage: '',
+    userInput:{
+      title: '',
+      imageURL: '',
+      price: '',
+      description: ''      
+    },
+    validationErrors: []
   });
 };
 
@@ -28,6 +39,14 @@ exports.getEditProduct = (req, res, next) => {
         productCSS: true,
         activeAddProduct: true,
         product: product,
+        errorMessage: '',
+        userInput:{
+          title: '',
+          imageURL: '',
+          price: '',
+          description: ''      
+        },
+        validationErrors: []
       });
     })
     .catch((err) => console.log(err));
@@ -50,6 +69,26 @@ exports.getProducts = (req, res, next) => {
 };
 
 exports.postAddProduct = (req, res, next) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).render("admin/add-product", {
+      pageTitle: "Add product",
+      path: "/admin/add-product",
+      formsCSS: true,
+      productCSS: true,
+      activeAddProduct: true,
+      errorMessage: errors.array()[0].msg,
+      userInput: {
+        title: req.body.title,
+        imageURL: req.body.imageURL,
+        price: req.body.price,
+        description: req.body.description
+      },
+      validationErrors: errors.array()
+    });
+  }
+
   const product = new Product({
     title: req.body.title,
     price: req.body.price,
@@ -70,7 +109,30 @@ exports.postAddProduct = (req, res, next) => {
 };
 
 exports.postEditProduct = (req, res) => {
-  const productId = req.params.productId;
+  const errors = validationResult(req);
+
+  
+  if (!errors.isEmpty()) {
+    
+    return res.status(422).render("admin/edit-product", {
+      pageTitle: "Edit product",
+      path: "/admin/edit-product",
+      formsCSS: true,
+      productCSS: true,
+      activeAddProduct: true,
+      errorMessage: errors.array()[0].msg,
+      product: {
+        title: req.body.title,
+        imageURL: req.body.imageURL,
+        price: req.body.price,
+        description: req.body.description,
+        _id:req.body.productId 
+      },
+      validationErrors: errors.array()
+    });
+  }
+
+  const productId = req.body.productId;
 
   Product.findById(productId)
     .then((product) => {
@@ -92,7 +154,7 @@ exports.postEditProduct = (req, res) => {
 
 exports.postDeleteProduct = (req, res) => {
   const productId = req.body.productId;
-  Product.deleteOne({_id:productId, userId: req.user._id})
+  Product.deleteOne({ _id: productId, userId: req.user._id })
     .then((delResult) => {
       res.redirect("/admin/products");
     })
