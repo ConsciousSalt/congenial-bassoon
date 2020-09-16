@@ -18,6 +18,8 @@ const transporter = nodemailer.createTransport(
   })
 );
 
+const errorHandler = require("../utils/globalHandlers").errorHandler;
+
 exports.getLogin = (req, res, next) => {
   let flashMessage = req.flash("error");
   if (flashMessage.length > 0) {
@@ -79,12 +81,11 @@ exports.postLogin = (req, res, next) => {
     req.session.isLoggedIn = true;
     req.session.user = user;
     return req.session.save((err) => {
-      console.log(err);
       res.redirect("/");
     });
   })
   .catch(err=>{
-    console.log(err)
+    errorHandler(err, next);
 ;  })
 
 };
@@ -130,7 +131,6 @@ exports.postSignup = (req, res, next) => {
 
 exports.postLogout = (req, res, next) => {
   req.session.destroy((err) => {
-    console.log(err);
     res.redirect("/");
   });
 };
@@ -170,7 +170,7 @@ exports.getNewPassword = (req, res, next) => {
       });
     })
     .catch((err) => {
-      console.log(err);
+      errorHandler(err, next);
     });
 };
 
@@ -205,7 +205,7 @@ exports.postReset = (req, res, next) => {
         });
       })
       .catch((err) => {
-        console.log(err);
+        errorHandler(err, next);
       });
   });
 };
@@ -235,6 +235,6 @@ exports.postNewPassword = (req, res, next) => {
       res.redirect("/login");
     })
     .catch((err) => {
-      console.log(err);
+      errorHandler(err, next);
     });
 };

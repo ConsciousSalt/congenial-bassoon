@@ -1,5 +1,7 @@
 const { validationResult } = require("express-validator");
 
+const errorHandler = require('../utils/globalHandlers').errorHandler;
+
 const Product = require("../models/product");
 const Order = require("../models/order");
 
@@ -49,7 +51,9 @@ exports.getEditProduct = (req, res, next) => {
         validationErrors: []
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      errorHandler(err, next);
+    });
 };
 
 exports.getProducts = (req, res, next) => {
@@ -65,7 +69,9 @@ exports.getProducts = (req, res, next) => {
         productCSS: true,
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      errorHandler(err, next);
+    });
 };
 
 exports.postAddProduct = (req, res, next) => {
@@ -104,7 +110,9 @@ exports.postAddProduct = (req, res, next) => {
       res.redirect("/admin/products");
     })
     .catch((err) => {
-      console.log(err);
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
     });
 };
 
@@ -149,7 +157,9 @@ exports.postEditProduct = (req, res) => {
         res.redirect("/admin/products");
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      errorHandler(err, next);
+    });
 };
 
 exports.postDeleteProduct = (req, res) => {
@@ -159,7 +169,7 @@ exports.postDeleteProduct = (req, res) => {
       res.redirect("/admin/products");
     })
     .catch((err) => {
-      console.log(err);
+      errorHandler(err, next);
     });
 };
 
@@ -197,7 +207,7 @@ exports.getCart = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
+      errorHandler(err, next);
     });
 };
 
@@ -221,7 +231,7 @@ exports.postCartDeleteItem = (req, res) => {
       res.redirect("/cart");
     })
     .catch((err) => {
-      console.log(err);
+      errorHandler(err, next);
     });
 };
 
@@ -235,7 +245,7 @@ exports.getOrders = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
+      errorHandler(err, next);
     });
 };
 
@@ -267,7 +277,9 @@ exports.getProduct = (req, res, next) => {
         product: product,
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      errorHandler(err, next);
+    });
 };
 
 exports.postOrder = (req, res, next) => {
@@ -299,6 +311,6 @@ exports.postOrder = (req, res, next) => {
       res.redirect("/orders");
     })
     .catch((err) => {
-      console.log(err);
+      errorHandler(err, next);
     });
 };
