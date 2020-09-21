@@ -13,7 +13,7 @@
                             <h1># <%= order._id %></h1>
                             <ol>
                                 <% order.products.forEach(p => { %>
-                                    <li><%= p.product.title %> (<%= p.quantity %>)</li>
+                                    <li><%= p.product.title %> (<%= p.quantity %>) - <a href="/orders/<%=order._id%>" target="_blank">Invoce</a></li>
                                 <%}); %>
                             </ol>
                         </li>

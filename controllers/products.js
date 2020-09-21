@@ -1,6 +1,11 @@
+const fs = require("fs");
+const path = require("path");
+
+const PDFDocument = require('pdfkit');
+
 const { validationResult } = require("express-validator");
 
-const errorHandler = require('../utils/globalHandlers').errorHandler;
+const errorHandler = require("../utils/globalHandlers").errorHandler;
 
 const Product = require("../models/product");
 const Order = require("../models/order");
@@ -8,21 +13,20 @@ const Order = require("../models/order");
 const { response } = require("express");
 
 exports.getAddProducts = (req, res, next) => {
-
   res.render("admin/add-product", {
     pageTitle: "Add product",
     path: "/admin/add-product",
     formsCSS: true,
     productCSS: true,
     activeAddProduct: true,
-    errorMessage: '',
-    userInput:{
-      title: '',
-      imageURL: '',
-      price: '',
-      description: ''      
+    errorMessage: "",
+    userInput: {
+      title: "",
+      // imageURL: '',
+      price: "",
+      description: "",
     },
-    validationErrors: []
+    validationErrors: [],
   });
 };
 
@@ -41,14 +45,14 @@ exports.getEditProduct = (req, res, next) => {
         productCSS: true,
         activeAddProduct: true,
         product: product,
-        errorMessage: '',
-        userInput:{
-          title: '',
-          imageURL: '',
-          price: '',
-          description: ''      
+        errorMessage: "",
+        userInput: {
+          title: "",
+          // imageURL: '',
+          price: "",
+          description: "",
         },
-        validationErrors: []
+        validationErrors: [],
       });
     })
     .catch((err) => {
@@ -76,6 +80,25 @@ exports.getProducts = (req, res, next) => {
 
 exports.postAddProduct = (req, res, next) => {
   const errors = validationResult(req);
+  const image = req.file; /* req.body.imageURL */
+
+  if (!image) {
+    return res.status(422).render("admin/add-product", {
+      pageTitle: "Add product",
+      path: "/admin/add-product",
+      formsCSS: true,
+      productCSS: true,
+      activeAddProduct: true,
+      errorMessage: "attached file is not an image ",
+      userInput: {
+        title: req.body.title,
+        // imageURL: req.body.imageURL,
+        price: req.body.price,
+        description: req.body.description,
+      },
+      validationErrors: errors.array(),
+    });
+  }
 
   if (!errors.isEmpty()) {
     return res.status(422).render("admin/add-product", {
@@ -87,19 +110,21 @@ exports.postAddProduct = (req, res, next) => {
       errorMessage: errors.array()[0].msg,
       userInput: {
         title: req.body.title,
-        imageURL: req.body.imageURL,
+        // imageURL: imageURL,
         price: req.body.price,
-        description: req.body.description
+        description: req.body.description,
       },
-      validationErrors: errors.array()
+      validationErrors: errors.array(),
     });
   }
+
+  const imageURL = image.path;
 
   const product = new Product({
     title: req.body.title,
     price: req.body.price,
     description: req.body.description,
-    imageURL: req.body.imageURL,
+    imageURL: imageURL,
     userId: req.user,
   });
 
@@ -110,18 +135,15 @@ exports.postAddProduct = (req, res, next) => {
       res.redirect("/admin/products");
     })
     .catch((err) => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      errorHandler(err, next);
     });
 };
 
-exports.postEditProduct = (req, res) => {
+exports.postEditProduct = (req, res, next) => {
   const errors = validationResult(req);
+  const image = req.file;
 
-  
   if (!errors.isEmpty()) {
-    
     return res.status(422).render("admin/edit-product", {
       pageTitle: "Edit product",
       path: "/admin/edit-product",
@@ -131,12 +153,11 @@ exports.postEditProduct = (req, res) => {
       errorMessage: errors.array()[0].msg,
       product: {
         title: req.body.title,
-        imageURL: req.body.imageURL,
         price: req.body.price,
         description: req.body.description,
-        _id:req.body.productId 
+        _id: req.body.productId,
       },
-      validationErrors: errors.array()
+      validationErrors: errors.array(),
     });
   }
 
@@ -150,7 +171,10 @@ exports.postEditProduct = (req, res) => {
 
       product.title = req.body.title;
       product.price = req.body.price;
-      product.imageURL = req.body.imageURL;
+      if (image) {
+        product.imageURL = image.path;
+      }
+      // product.imageURL = req.body.imageURL;
       product.description = req.body.description;
 
       return product.save().then((savingResult) => {
@@ -162,7 +186,7 @@ exports.postEditProduct = (req, res) => {
     });
 };
 
-exports.postDeleteProduct = (req, res) => {
+exports.postDeleteProduct = (req, res, next) => {
   const productId = req.body.productId;
   Product.deleteOne({ _id: productId, userId: req.user._id })
     .then((delResult) => {
@@ -187,7 +211,7 @@ exports.getMainPage = (req, res) => {
   });
 };
 
-exports.getCart = (req, res) => {
+exports.getCart = (req, res, next) => {
   req.user
     .populate("cart.items.productId")
     .execPopulate()
@@ -223,7 +247,7 @@ exports.postCart = (req, res, next) => {
     });
 };
 
-exports.postCartDeleteItem = (req, res) => {
+exports.postCartDeleteItem = (req, res, next) => {
   const prodId = req.body.productId;
   req.user
     .removeFromCart(prodId)
@@ -235,7 +259,7 @@ exports.postCartDeleteItem = (req, res) => {
     });
 };
 
-exports.getOrders = (req, res) => {
+exports.getOrders = (req, res, next) => {
   Order.find({ "user.userId": req.user._id })
     .then((orders) => {
       res.render("shop/orders", {
@@ -249,7 +273,57 @@ exports.getOrders = (req, res) => {
     });
 };
 
-exports.getProductList = (req, res) => {
+exports.getInvoce = (req, res, next) => {
+  const orderId = req.params.orderId;
+
+  Order.findById(orderId)
+    .then((order) => {
+      if (!order) {
+        return next(new Error("No order found!"));
+      };
+
+
+
+      if (order.user.userId.toString() !== req.user._id.toString()) {
+        return next(new Error('Not authorized!'));
+      }
+      const invoceName = "invoce-" + orderId + ".pdf";
+      const invocePath = path.join("data", "invoces", invoceName);
+      
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': '\'inline\'; filename="'+invoceName+'"',
+        });
+
+      const pdfDoc = new PDFDocument();
+      pdfDoc.pipe(fs.createWriteStream(invocePath));
+      pdfDoc.pipe(res);
+      
+      pdfDoc.text('Invoce');
+
+      pdfDoc.end();
+
+      // console.log('invocePath', invocePath,  'invoceName', invoceName);
+      // fs.readFile(invocePath, (err, data) => {
+      //   if (err) {
+      //     return next(err);
+      //   }
+
+        
+      //   res.set({
+      //     'Content-Type': 'application/pdf',
+      //     'Content-Disposition': '\'inline\'; filename="'+invoceName+'"',
+      //   });
+      //   res.send(data);
+
+      // });
+    })
+    .catch((err) => {
+      return next(err);
+    });
+};
+
+exports.getProductList = (req, res, next) => {
   Product.find().then((products) => {
     res.render("shop/product-list", {
       products,

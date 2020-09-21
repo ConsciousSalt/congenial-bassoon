@@ -4,6 +4,7 @@ const path = require("path");
 
 const express = require("express");
 const bodyParser = require("body-parser");
+const multer = require("multer");
 
 const mongoose = require("mongoose");
 mongoose.set("useUnifiedTopology", true);
@@ -22,6 +23,28 @@ const sessionStore = new MongoDBStore({
 });
 const csrfProtection = csrf();
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, callback) => {
+    callback(null, "images");
+  },
+  filename: (req, file, callback) => {
+
+    callback(null, Date.now() + '-' + file.originalname);
+  },
+});
+
+const fileFilter = (req, file, callback) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    callback(null, true);
+  } else {
+    callback(null, false);
+  }
+};
+
 const User = require("./models/user");
 const errorsController = require("./controllers/errors");
 const errorHandler = require("./utils/globalHandlers").errorHandler;
@@ -35,7 +58,14 @@ app.set("view engine", "ejs");
 app.set("views", "views");
 
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single("imageFile")
+);
+
 app.use(express.static(path.join(__dirname, "public")));
+app.use('/images', express.static(path.join(__dirname, "images")));
+app.use('/admin/images', express.static(path.join(__dirname, "images")));
+
 app.use(
   session({
     secret: "my secret",
@@ -82,7 +112,7 @@ app.use((error, req, res, next) => {
   res.status(500).render("500", {
     pageTitle: "Error occured!",
     path: "/500",
-    isAuthenticated: req.session.isLoggedIn,
+    isAuthenticated: req.session.isLoggedIn
   });
 });
 
