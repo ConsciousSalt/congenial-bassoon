@@ -1,7 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const PDFDocument = require('pdfkit');
+const fileHelper = require("../utils/file");
+
+const PDFDocument = require("pdfkit");
 
 const { validationResult } = require("express-validator");
 
@@ -9,6 +11,8 @@ const errorHandler = require("../utils/globalHandlers").errorHandler;
 
 const Product = require("../models/product");
 const Order = require("../models/order");
+
+const ITEMS_PER_PAGE = 1;
 
 const { response } = require("express");
 
@@ -61,7 +65,17 @@ exports.getEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.find({ userId: req.user._id })
+  const page = Number(req.query.page || 1);
+  let totaItems;
+
+  Product.find()
+    .countDocuments()
+    .then((numProds) => {
+      totaItems = numProds;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
+    })
     .then((products) => {
       res.render("admin/products", {
         products,
@@ -71,6 +85,12 @@ exports.getProducts = (req, res, next) => {
         activeShop: true,
         formsCSS: true,
         productCSS: true,
+        currentPage: page,
+        hasNextPage: ITEMS_PER_PAGE * page < totaItems,
+        hasPreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE)
       });
     })
     .catch((err) => {
@@ -172,6 +192,7 @@ exports.postEditProduct = (req, res, next) => {
       product.title = req.body.title;
       product.price = req.body.price;
       if (image) {
+        fileHelper.deleteFile(product.imageURL);
         product.imageURL = image.path;
       }
       // product.imageURL = req.body.imageURL;
@@ -188,7 +209,15 @@ exports.postEditProduct = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const productId = req.body.productId;
-  Product.deleteOne({ _id: productId, userId: req.user._id })
+
+  Product.findById(productId)
+    .then((product) => {
+      if (!product) {
+        return next(new Error("Product not found!"));
+      }
+      fileHelper.deleteFile(product.imageURL);
+      return Product.deleteOne({ _id: productId, userId: req.user._id });
+    })
     .then((delResult) => {
       res.redirect("/admin/products");
     })
@@ -197,18 +226,38 @@ exports.postDeleteProduct = (req, res, next) => {
     });
 };
 
-exports.getMainPage = (req, res) => {
-  Product.find().then((products) => {
-    res.render("shop/index", {
-      products,
-      pageTitle: "Shop",
-      path: "/",
-      hasProducts: products.length > 0,
-      activeShop: true,
-      formsCSS: true,
-      productCSS: true,
+exports.getMainPage = (req, res, next) => {
+  const page = Number(req.query.page || 1);
+  let totaItems;
+
+  Product.find()
+    .countDocuments()
+    .then((numProds) => {
+      totaItems = numProds;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
+    })
+    .then((products) => {
+      res.render("shop/index", {
+        products,
+        pageTitle: "Shop",
+        path: "/",
+        hasProducts: products.length > 0,
+        activeShop: true,
+        formsCSS: true,
+        productCSS: true,
+        currentPage: page,
+        hasNextPage: ITEMS_PER_PAGE * page < totaItems,
+        hasPreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE)
+      });
+    })
+    .catch((err) => {
+      errorHandler(err, next);
     });
-  });
 };
 
 exports.getCart = (req, res, next) => {
@@ -280,27 +329,46 @@ exports.getInvoce = (req, res, next) => {
     .then((order) => {
       if (!order) {
         return next(new Error("No order found!"));
-      };
-
-
+      }
 
       if (order.user.userId.toString() !== req.user._id.toString()) {
-        return next(new Error('Not authorized!'));
+        return next(new Error("Not authorized!"));
       }
       const invoceName = "invoce-" + orderId + ".pdf";
       const invocePath = path.join("data", "invoces", invoceName);
-      
+
       res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': '\'inline\'; filename="'+invoceName+'"',
-        });
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "'inline'; filename=\"" + invoceName + '"',
+      });
 
       const pdfDoc = new PDFDocument();
       pdfDoc.pipe(fs.createWriteStream(invocePath));
       pdfDoc.pipe(res);
-      
-      pdfDoc.text('Invoce');
 
+      pdfDoc.fontSize(26).text("Invoce", {
+        underline: true,
+      });
+
+      pdfDoc.text("-----***-----");
+      let totalSum = 0;
+      order.products.forEach((prod) => {
+        const prodSum = prod.quantity * prod.product.price;
+        pdfDoc
+          .fontSize(14)
+          .text(
+            prod.product.title +
+              "  - " +
+              prod.quantity +
+              " x $" +
+              prod.product.price +
+              " : $" +
+              prodSum
+          );
+        totalSum += prodSum;
+      });
+      pdfDoc.text(" ");
+      pdfDoc.text("Total price: $" + totalSum);
       pdfDoc.end();
 
       // console.log('invocePath', invocePath,  'invoceName', invoceName);
@@ -309,7 +377,6 @@ exports.getInvoce = (req, res, next) => {
       //     return next(err);
       //   }
 
-        
       //   res.set({
       //     'Content-Type': 'application/pdf',
       //     'Content-Disposition': '\'inline\'; filename="'+invoceName+'"',
@@ -324,17 +391,37 @@ exports.getInvoce = (req, res, next) => {
 };
 
 exports.getProductList = (req, res, next) => {
-  Product.find().then((products) => {
-    res.render("shop/product-list", {
-      products,
-      pageTitle: "Products",
-      path: "/products",
-      hasProducts: products.length > 0,
-      activeShop: true,
-      formsCSS: true,
-      productCSS: true,
+  const page = Number(req.query.page || 1);
+  let totaItems;
+
+  Product.find()
+    .countDocuments()
+    .then((numProds) => {
+      totaItems = numProds;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
+    })
+    .then((products) => {
+      res.render("shop/product-list", {
+        products,
+        pageTitle: "Products",
+        path: "/products",
+        hasProducts: products.length > 0,
+        activeShop: true,
+        formsCSS: true,
+        productCSS: true,
+        currentPage: page,
+        hasNextPage: ITEMS_PER_PAGE * page < totaItems,
+        hasPreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE)
+      });
+    })
+    .catch((err) => {
+      errorHandler(err, next);
     });
-  });
 };
 
 exports.getProduct = (req, res, next) => {
