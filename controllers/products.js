@@ -90,7 +90,7 @@ exports.getProducts = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE)
+        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE),
       });
     })
     .catch((err) => {
@@ -219,10 +219,10 @@ exports.deleteProduct = (req, res, next) => {
       return Product.deleteOne({ _id: productId, userId: req.user._id });
     })
     .then((delResult) => {
-      res.status(200).json({message: 'Success'});
+      res.status(200).json({ message: "Success" });
     })
     .catch((err) => {
-      res.status(500).json({message: 'Failed'});
+      res.status(500).json({ message: "Failed" });
     });
 };
 
@@ -252,7 +252,7 @@ exports.getMainPage = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE)
+        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE),
       });
     })
     .catch((err) => {
@@ -416,7 +416,7 @@ exports.getProductList = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE)
+        lastPage: Math.ceil(totaItems / ITEMS_PER_PAGE),
       });
     })
     .catch((err) => {
@@ -470,6 +470,38 @@ exports.postOrder = (req, res, next) => {
     })
     .then((result) => {
       res.redirect("/orders");
+    })
+    .catch((err) => {
+      errorHandler(err, next);
+    });
+};
+
+exports.getCheckout = (req, res, next) => {
+  req.user
+    .populate("cart.items.productId")
+    .execPopulate()
+    .then((user) => {
+      const products = user.cart.items.map((product) => {
+        return {
+          _id: product.productId._id,
+          title: product.productId.title,
+          quantity: product.quantity,
+        };
+      });
+
+      const total = user.cart.items.reduce((total, product) => {
+        console.log('t', total, 'p', product);
+        return total + product.quantity * product.productId.price;
+      }, 0);
+
+      console.log(total);
+
+      res.render("shop/checkout", {
+        pageTitle: "Checkout",
+        path: "/checkout",
+        products: products,
+        totalSum: total,
+      });
     })
     .catch((err) => {
       errorHandler(err, next);
