@@ -38,6 +38,6 @@ router.post(
   ],
   productsContoller.postEditProduct
 );
-router.post("/delete-product", isAuth, productsContoller.postDeleteProduct);
+router.delete("/product/:productId", isAuth, productsContoller.deleteProduct);
 
 module.exports = router;
