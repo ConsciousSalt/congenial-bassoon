@@ -1,4 +1,4 @@
-const MONGO_URI = require("./data/mongodb");
+const MONGO_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@clustera.hvojq.mongodb.net/${process.env.MONGO_messages_db}?retryWrites=true&w=majority`;
 
 const path = require("path");
 
