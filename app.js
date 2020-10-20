@@ -1,7 +1,12 @@
 const MONGO_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@clustera.hvojq.mongodb.net/${process.env.MONGO_messages_db}?retryWrites=true&w=majority`;
 
+const fs = require("fs");
 const path = require("path");
+const https = require("https");
 
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
 const express = require("express");
 const bodyParser = require("body-parser");
 const multer = require("multer");
@@ -14,6 +19,9 @@ const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const csrf = require("csurf");
 const flash = require("connect-flash");
+
+const privateKey = fs.readFileSync('server.key');
+const certificate = fs.readFileSync('server.cert');
 
 const app = express();
 
@@ -28,8 +36,7 @@ const fileStorage = multer.diskStorage({
     callback(null, "images");
   },
   filename: (req, file, callback) => {
-
-    callback(null, Date.now() + '-' + file.originalname);
+    callback(null, Date.now() + "-" + file.originalname);
   },
 });
 
@@ -57,14 +64,23 @@ const authRoutes = require("./routes/auth");
 app.set("view engine", "ejs");
 app.set("views", "views");
 
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, "access.log"),
+  { flags: "a" }
+);
+
+app.use(helmet());
+app.use(compression());
+app.use(morgan("combined", {stream:accessLogStream}));
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("imageFile")
 );
 
 app.use(express.static(path.join(__dirname, "public")));
-app.use('/images', express.static(path.join(__dirname, "images")));
-app.use('/admin/images', express.static(path.join(__dirname, "images")));
+app.use("/images", express.static(path.join(__dirname, "images")));
+app.use("/admin/images", express.static(path.join(__dirname, "images")));
 
 app.use(
   session({
@@ -112,14 +128,14 @@ app.use((error, req, res, next) => {
   res.status(500).render("500", {
     pageTitle: "Error occured!",
     path: "/500",
-    isAuthenticated: req.session.isLoggedIn
+    isAuthenticated: req.session.isLoggedIn,
   });
 });
 
 mongoose
   .connect(MONGO_URI)
   .then((result) => {
-    app.listen(3000);
+    https.createServer({key: privateKey, cert: certificate},app).listen(3000);
   })
   .catch((err) => {
     errorHandler(err, next);
