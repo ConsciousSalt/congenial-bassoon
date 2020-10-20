@@ -4,7 +4,7 @@
   "main": "app.js",
   "license": "MIT",
   "scripts": {
-    "start": "MONGO_USER=Alex MONGO_PASSWORD=dylvwUvtBXOuxtz1 MONGO_messages_db=shop node app.js",
+    "start": "node app.js",
     "start-server": "node app.js",
     "start-dev": "nodemon app.js"
   },
