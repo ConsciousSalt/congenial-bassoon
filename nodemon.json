@@ -2,6 +2,7 @@
     "env": {
         "MONGO_USER": "Alex",
         "MONGO_PASSWORD": "dylvwUvtBXOuxtz1",
-        "MONGO_messages_db": "shop"
+        "MONGO_messages_db": "shop",
+        "PORT": 3000
     }
 }
