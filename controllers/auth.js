@@ -1,4 +1,4 @@
-const verifiedMail = process.env.SENDGRID-VERIFIED-MAIL;
+const verifiedMail = process.env.SENDGRID_VERIFIED_MAIL;
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 
 const { validationResult } = require("express-validator");
