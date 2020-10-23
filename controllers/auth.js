@@ -1,4 +1,5 @@
 const verifiedMail = process.env.SENDGRID-VERIFIED-MAIL;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 
 const { validationResult } = require("express-validator");
 const crypto = require("crypto");
@@ -7,7 +8,6 @@ const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const sendgridTransport = require("nodemailer-sendgrid-transport");
 
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const User = require("../models/user");
 
 const transporter = nodemailer.createTransport(
