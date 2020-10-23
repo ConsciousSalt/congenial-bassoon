@@ -3,6 +3,8 @@
         "MONGO_USER": "Alex",
         "MONGO_PASSWORD": "dylvwUvtBXOuxtz1",
         "MONGO_messages_db": "shop",
+        "SENDGRID_API_KEY": "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",
+        "SENDGRID_VERIFIED_MAIL": "jinjergamer@rambler.ru",
         "PORT": 3000
     }
 }
